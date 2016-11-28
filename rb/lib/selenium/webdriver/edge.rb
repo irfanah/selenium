@@ -24,21 +24,27 @@ require 'selenium/webdriver/edge/bridge'
 
 module Selenium
   module WebDriver
-
     module Edge
       def self.driver_path=(path)
-        Service.executable_path = path
-      end
+        warn <<-DEPRECATE.gsub(/\n +| {2,}/, ' ').freeze
+          [DEPRECATION] `driver_path=` is deprecated. Pass the driver path as an option instead.
+          e.g. Selenium::WebDriver.for :edge, driver_path: '/path'
+        DEPRECATE
 
-      def self.path=(path)
         Platform.assert_executable path
-        @path = path
+        @driver_path = path
       end
 
-      def self.path
-        @path ||= nil
-      end
+      def self.driver_path(warning = true)
+        if warning
+          warn <<-DEPRECATE.gsub(/\n +| {2,}/, ' ').freeze
+            [DEPRECATION] `driver_path` is deprecated. Pass the driver path as an option instead.
+            e.g. Selenium::WebDriver.for :edge, driver_path: '/path'
+          DEPRECATE
+        end
 
+        @driver_path ||= nil
+      end
     end # Edge
   end # WebDriver
 end # Selenium

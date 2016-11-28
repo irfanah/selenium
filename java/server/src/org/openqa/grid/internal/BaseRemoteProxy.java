@@ -104,14 +104,14 @@ public class BaseRemoteProxy implements RemoteProxy {
     this.request = request;
     this.registry = registry;
     this.config = new GridNodeConfiguration();
-    this.config.merge(request.getConfiguration());
-    // the registry is the 'hub' configuration, which takes precedence.
-    // merging last overrides any other values.
+    // the registry is the 'hub' configuration, which is used as a seed.
     this.config.merge(registry.getConfiguration());
+    // the proxy values must override any that the hub specify where an overlap occurs.
+    // merging last causes the values to be overridden.
+    this.config.merge(request.getConfiguration());
+    // host and port are merge() protected values -- overrule this behavior
     this.config.host = request.getConfiguration().host;
     this.config.port = request.getConfiguration().port;
-    // custom configurations from the remote need to 'override' the hub
-    this.config.custom.putAll(request.getConfiguration().custom);
 
     String url = config.getRemoteHost();
     String id = config.id;
@@ -138,7 +138,7 @@ public class BaseRemoteProxy implements RemoteProxy {
       this.id = remoteHost.toExternalForm();
     }
 
-    List<DesiredCapabilities> capabilities = request.getCapabilities();
+    List<DesiredCapabilities> capabilities = request.getConfiguration().capabilities;
 
     List<TestSlot> slots = new ArrayList<>();
     for (DesiredCapabilities capability : capabilities) {
@@ -193,9 +193,8 @@ public class BaseRemoteProxy implements RemoteProxy {
         default:
           throw new GridException("Protocol not supported.");
       }
-    } else {
-      return type;
     }
+    return type;
   }
 
   public void setupTimeoutListener() {
@@ -293,7 +292,7 @@ public class BaseRemoteProxy implements RemoteProxy {
                     + " has TIMED OUT due to client inactivity and will be released.");
             try {
               ((TimeoutListener) proxy).beforeRelease(session);
-            } catch(IllegalStateException ignore){
+            } catch(IllegalStateException ignore) {
               log.log(Level.WARNING, ignore.getMessage());
             }
             registry.terminate(session, SessionTerminationReason.TIMEOUT);
@@ -305,7 +304,7 @@ public class BaseRemoteProxy implements RemoteProxy {
               "session " + session + " has been ORPHANED and will be released");
           try {
             ((TimeoutListener) proxy).beforeRelease(session);
-          } catch(IllegalStateException ignore){
+          } catch(IllegalStateException ignore) {
             log.log(Level.WARNING, ignore.getMessage());
           }
           registry.terminate(session, SessionTerminationReason.ORPHAN);
@@ -331,15 +330,15 @@ public class BaseRemoteProxy implements RemoteProxy {
   }
 
   public TestSession getNewSession(Map<String, Object> requestedCapability) {
-    log.info("Trying to create a new session on node " + this);
+    log.fine("Trying to create a new session on node " + this);
 
     if (!hasCapability(requestedCapability)) {
-      log.info("Node " + this + " has no matching capability");
+      log.fine("Node " + this + " has no matching capability");
       return null;
     }
     // any slot left at all?
     if (getTotalUsed() >= config.maxSession) {
-      log.info("Node " + this + " has no free slots");
+      log.fine("Node " + this + " has no free slots");
       return null;
     }
     // any slot left for the given app ?
@@ -392,7 +391,7 @@ public class BaseRemoteProxy implements RemoteProxy {
   public static <T extends RemoteProxy> T getNewInstance(
       RegistrationRequest request, Registry registry) {
     try {
-      String proxyClass = request.getRemoteProxyClass();
+      String proxyClass = request.getConfiguration().proxy;
       if (proxyClass == null) {
         log.fine("No proxy class. Using default");
         proxyClass = BaseRemoteProxy.class.getCanonicalName();
@@ -406,9 +405,8 @@ public class BaseRemoteProxy implements RemoteProxy {
       if (proxy instanceof RemoteProxy) {
         ((RemoteProxy) proxy).setupTimeoutListener();
         return (T) proxy;
-      } else {
-        throw new InvalidParameterException("Error: " + proxy.getClass() + " isn't a remote proxy");
       }
+      throw new InvalidParameterException("Error: " + proxy.getClass() + " isn't a remote proxy");
     } catch (InvocationTargetException e) {
       throw new InvalidParameterException("Error: " + e.getTargetException().getMessage());
     } catch (Exception e) {
@@ -485,7 +483,7 @@ public class BaseRemoteProxy implements RemoteProxy {
     String url = getRemoteHost().toExternalForm() + "/wd/hub/status";
     BasicHttpRequest r = new BasicHttpRequest("GET", url);
     HttpClient client = getHttpClientFactory().getGridHttpClient(config.nodeStatusCheckTimeout, config.nodeStatusCheckTimeout);
-    HttpHost host = new HttpHost(getRemoteHost().getHost(), getRemoteHost().getPort());
+    HttpHost host = new HttpHost(getRemoteHost().getHost(), getRemoteHost().getPort(), getRemoteHost().getProtocol());
     HttpResponse response;
     String existingName = Thread.currentThread().getName();
     HttpEntity entity = null;

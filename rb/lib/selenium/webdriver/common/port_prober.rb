@@ -40,6 +40,7 @@ module Selenium
 
       IGNORED_ERRORS = [Errno::EADDRNOTAVAIL]
       IGNORED_ERRORS << Errno::EBADF if Platform.cygwin?
+      IGNORED_ERRORS.freeze
 
       def self.free?(port)
         Platform.interfaces.each do |host|
@@ -55,7 +56,6 @@ module Selenium
       rescue SocketError, Errno::EADDRINUSE
         false
       end
-
     end # PortProber
   end # WebDriver
 end # Selenium

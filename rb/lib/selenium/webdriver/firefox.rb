@@ -35,17 +35,36 @@ require 'selenium/webdriver/firefox/service'
 module Selenium
   module WebDriver
     module Firefox
-
-      DEFAULT_PORT                    = 7055
-      DEFAULT_ENABLE_NATIVE_EVENTS    = Platform.os == :windows
-      DEFAULT_SECURE_SSL              = false
+      DEFAULT_PORT = 7055
+      DEFAULT_ENABLE_NATIVE_EVENTS = Platform.os == :windows
+      DEFAULT_SECURE_SSL = false
       DEFAULT_ASSUME_UNTRUSTED_ISSUER = true
-      DEFAULT_LOAD_NO_FOCUS_LIB       = false
+      DEFAULT_LOAD_NO_FOCUS_LIB = false
+
+      def self.driver_path=(path)
+        warn <<-DEPRECATE.gsub(/\n +| {2,}/, ' ').freeze
+          [DEPRECATION] `driver_path=` is deprecated. Pass the driver path as an option instead.
+          e.g. Selenium::WebDriver.for :firefox, driver_path: '/path'
+        DEPRECATE
+
+        Platform.assert_executable path
+        @driver_path = path
+      end
+
+      def self.driver_path(warning = true)
+        if warning
+          warn <<-DEPRECATE.gsub(/\n +| {2,}/, ' ').freeze
+            [DEPRECATION] `driver_path` is deprecated. Pass the driver path as an option instead.
+            e.g. Selenium::WebDriver.for :firefox, driver_path: '/path'
+          DEPRECATE
+        end
+
+        @driver_path ||= nil
+      end
 
       def self.path=(path)
         Binary.path = path
       end
-
     end # Firefox
   end # WebDriver
 end # Selenium

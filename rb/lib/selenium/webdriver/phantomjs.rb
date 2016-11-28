@@ -24,18 +24,27 @@ require 'selenium/webdriver/phantomjs/bridge'
 
 module Selenium
   module WebDriver
-
     module PhantomJS
-
       def self.path=(path)
+        warn <<-DEPRECATE.gsub(/\n +| {2,}/, ' ').freeze
+          [DEPRECATION] `path=` is deprecated. Pass the driver path as an option instead.
+          e.g. Selenium::WebDriver.for :phantomjs, driver_path: '/path'
+        DEPRECATE
+
         Platform.assert_executable path
         @path = path
       end
 
-      def self.path
-        @path ||= Platform.find_binary("phantomjs")
-      end
+      def self.path(warning = true)
+        if warning
+          warn <<-DEPRECATE.gsub(/\n +| {2,}/, ' ').freeze
+            [DEPRECATION] `path` is deprecated. Pass the driver path as an option instead.
+            e.g. Selenium::WebDriver.for :phantomjs, driver_path: '/path'
+          DEPRECATE
+        end
 
+        @path ||= nil
+      end
     end # PhantomJS
   end # WebDriver
 end # Selenium

@@ -17,13 +17,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import sys
-
 from distutils.command.install import INSTALL_SCHEMES
-from os.path import dirname, join, isfile, abspath
+from os.path import dirname, join, abspath
 from setuptools import setup
 from setuptools.command.install import install
-from shutil import copy
 
 
 for scheme in INSTALL_SCHEMES.values():
@@ -32,12 +29,12 @@ for scheme in INSTALL_SCHEMES.values():
 setup_args = {
     'cmdclass': {'install': install},
     'name': 'selenium',
-    'version': "2.53.0",
+    'version': "3.0.2",
     'description': 'Python bindings for Selenium',
     'long_description': open(join(abspath(dirname(__file__)), "py", "README.rst")).read(),
     'url': 'https://github.com/SeleniumHQ/selenium/',
     'classifiers': ['Development Status :: 5 - Production/Stable',
-                   'Intended Audience :: Developers',
+                    'Intended Audience :: Developers',
                     'License :: OSI Approved :: Apache Software License',
                     'Operating System :: POSIX',
                     'Operating System :: Microsoft :: Windows',
@@ -53,19 +50,10 @@ setup_args = {
     'package_dir': {
         'selenium': 'py/selenium',
         'selenium.common': 'py/selenium/common',
-        'selenium.test': 'py/test',
-        'selenium.test.selenium': 'py/test/selenium',
         'selenium.webdriver': 'py/selenium/webdriver',
     },
     'packages': ['selenium',
                  'selenium.common',
-                 'selenium.test',
-                 'selenium.test.selenium',
-                 'selenium.test.selenium.common',
-                 'selenium.test.selenium.webdriver',
-                 'selenium.test.selenium.webdriver.common',
-                 'selenium.test.selenium.webdriver.ie',
-                 'selenium.test.selenium.webdriver.support',
                  'selenium.webdriver',
                  'selenium.webdriver.android',
                  'selenium.webdriver.chrome',
@@ -81,9 +69,12 @@ setup_args = {
                  'selenium.webdriver.support', ],
     'package_data': {
         'selenium.webdriver.firefox': ['*.xpi', 'webdriver_prefs.json'],
+        'selenium.webdriver.remote': ['getAttribute.js', 'isDisplayed.js'],
     },
     'data_files': [('selenium/webdriver/firefox/x86', ['py/selenium/webdriver/firefox/x86/x_ignore_nofocus.so']),
-                   ('selenium/webdriver/firefox/amd64', ['py/selenium/webdriver/firefox/amd64/x_ignore_nofocus.so'])],
+                   ('selenium/webdriver/firefox/amd64', ['py/selenium/webdriver/firefox/amd64/x_ignore_nofocus.so']),
+                   ('selenium/webdriver/remote', ['py/selenium/webdriver/remote/getAttribute.js']),
+                   ('selenium/webdriver/remote', ['py/selenium/webdriver/remote/isDisplayed.js'])],
     'include_package_data': True,
     'zip_safe': False
 }

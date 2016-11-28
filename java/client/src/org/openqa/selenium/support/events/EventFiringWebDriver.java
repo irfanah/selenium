@@ -40,6 +40,7 @@ import org.openqa.selenium.internal.Locatable;
 import org.openqa.selenium.internal.WrapsDriver;
 import org.openqa.selenium.internal.WrapsElement;
 import org.openqa.selenium.logging.Logs;
+import org.openqa.selenium.security.Credentials;
 import org.openqa.selenium.support.events.internal.EventFiringKeyboard;
 import org.openqa.selenium.support.events.internal.EventFiringMouse;
 import org.openqa.selenium.support.events.internal.EventFiringTouch;
@@ -80,7 +81,7 @@ public class EventFiringWebDriver implements WebDriver, JavascriptExecutor, Take
                 method.invoke(eventListener, args);
               }
               return null;
-              } catch (InvocationTargetException e){
+              } catch (InvocationTargetException e) {
                 throw e.getTargetException();
               }
             }
@@ -153,9 +154,8 @@ public class EventFiringWebDriver implements WebDriver, JavascriptExecutor, Take
   public WebDriver getWrappedDriver() {
     if (driver instanceof WrapsDriver) {
       return ((WrapsDriver) driver).getWrappedDriver();
-    } else {
-      return driver;
     }
+    return driver;
   }
 
   public void get(String url) {
@@ -293,29 +293,26 @@ public class EventFiringWebDriver implements WebDriver, JavascriptExecutor, Take
   public Keyboard getKeyboard() {
     if (driver instanceof HasInputDevices) {
       return new EventFiringKeyboard(driver, dispatcher);
-    } else {
-      throw new UnsupportedOperationException("Underlying driver does not implement advanced"
-          + " user interactions yet.");
     }
+    throw new UnsupportedOperationException("Underlying driver does not implement advanced"
+        + " user interactions yet.");
   }
 
   public Mouse getMouse() {
     if (driver instanceof HasInputDevices) {
       return new EventFiringMouse(driver, dispatcher);
-    } else {
-      throw new UnsupportedOperationException("Underlying driver does not implement advanced"
-          + " user interactions yet.");
     }
+    throw new UnsupportedOperationException("Underlying driver does not implement advanced"
+        + " user interactions yet.");
   }
 
   public TouchScreen getTouch() {
     if (driver instanceof HasTouchScreen) {
       return new EventFiringTouch(driver, dispatcher);
-    } else {
-      throw new UnsupportedOperationException("Underlying driver does not implement advanced"
-          + " user interactions yet.");
     }
-  }
+    throw new UnsupportedOperationException("Underlying driver does not implement advanced"
+        + " user interactions yet.");
+ }
 
   private class EventFiringWebElement implements WebElement, WrapsElement, WrapsDriver, Locatable {
 
@@ -612,7 +609,7 @@ public class EventFiringWebDriver implements WebDriver, JavascriptExecutor, Take
     }
 
     public Alert alert() {
-      return targetLocator.alert();
+      return new EventFiringAlert(this.targetLocator.alert());
     }
   }
 
@@ -646,6 +643,42 @@ public class EventFiringWebDriver implements WebDriver, JavascriptExecutor, Take
 
     public void fullscreen() {
       window.fullscreen();
+    }
+  }
+
+  private class EventFiringAlert implements Alert {
+    private final Alert alert;
+
+    private EventFiringAlert(Alert alert) {
+      this.alert = alert;
+    }
+
+    public void dismiss() {
+      dispatcher.beforeAlertDismiss(driver);
+      alert.dismiss();
+      dispatcher.afterAlertDismiss(driver);
+    }
+
+    public void accept() {
+      dispatcher.beforeAlertAccept(driver);
+      alert.accept();
+      dispatcher.afterAlertAccept(driver);
+    }
+
+    public String getText() {
+      return alert.getText();
+    }
+
+    public void sendKeys(String keysToSend) {
+      alert.sendKeys(keysToSend);
+    }
+
+    public void setCredentials(Credentials credentials) {
+      alert.setCredentials(credentials);
+    }
+
+    public void authenticateUsing(Credentials credentials) {
+      alert.authenticateUsing(credentials);
     }
   }
 }

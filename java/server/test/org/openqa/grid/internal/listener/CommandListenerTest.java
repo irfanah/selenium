@@ -1,3 +1,20 @@
+// Licensed to the Software Freedom Conservancy (SFC) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The SFC licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package org.openqa.grid.internal.listener;
 
 import static org.mockito.Matchers.any;
@@ -13,7 +30,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -28,6 +45,7 @@ import org.openqa.grid.web.servlet.handler.RequestHandler;
 import org.openqa.grid.web.servlet.handler.SeleniumBasedRequest;
 import org.openqa.grid.web.servlet.handler.SeleniumBasedResponse;
 import org.openqa.selenium.remote.CapabilityType;
+import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.internal.HttpClientFactory;
 
 import java.io.IOException;
@@ -116,16 +134,15 @@ public class CommandListenerTest {
     }
   }
 
-  static RegistrationRequest req = null;
-  static Map<String, Object> app1 = new HashMap<>();
+  private RegistrationRequest req = null;
+  private Map<String, Object> app1 = new HashMap<>();
 
-  @BeforeClass
-  public static void prepare() {
+  @Before
+  public void prepare() {
     app1.put(CapabilityType.APPLICATION_NAME, "app1");
     GridNodeConfiguration config = new GridNodeConfiguration();
-    req = new RegistrationRequest();
-    req.addDesiredCapability(app1);
-    req.setConfiguration(config);
+    config.capabilities.add(new DesiredCapabilities(app1));
+    req = new RegistrationRequest(config);
   }
 
   @Test

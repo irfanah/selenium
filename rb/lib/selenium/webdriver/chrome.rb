@@ -25,10 +25,26 @@ require 'selenium/webdriver/chrome/profile'
 
 module Selenium
   module WebDriver
-
     module Chrome
       def self.driver_path=(path)
-        Service.executable_path = path
+        warn <<-DEPRECATE.gsub(/\n +| {2,}/, ' ').freeze
+          [DEPRECATION] `driver_path=` is deprecated. Pass the driver path as an option instead.
+          e.g. Selenium::WebDriver.for :chrome, driver_path: '/path'
+        DEPRECATE
+
+        Platform.assert_executable path
+        @driver_path = path
+      end
+
+      def self.driver_path(warning = true)
+        if warning
+          warn <<-DEPRECATE.gsub(/\n +| {2,}/, ' ').freeze
+            [DEPRECATION] `driver_path` is deprecated. Pass the driver path as an option instead.
+            e.g. Selenium::WebDriver.for :chrome, driver_path: '/path'
+          DEPRECATE
+        end
+
+        @driver_path ||= nil
       end
 
       def self.path=(path)
@@ -39,7 +55,6 @@ module Selenium
       def self.path
         @path ||= nil
       end
-
     end # Chrome
   end # WebDriver
 end # Selenium

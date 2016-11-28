@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 namespace OpenQA.Selenium
 {
     [TestFixture]
+    [IgnoreBrowser(Browser.Safari)]
     public class ExecutingAsyncJavascriptTest : DriverTestFixture
     {
         private IJavaScriptExecutor executor;
@@ -230,6 +231,7 @@ namespace OpenQA.Selenium
         [Test]
         [IgnoreBrowser(Browser.Android, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.Chrome, "Does not handle async alerts")]
+        [IgnoreBrowser(Browser.Edge, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.HtmlUnit, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.IE, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.IPhone, "Does not handle async alerts")]
@@ -255,6 +257,7 @@ namespace OpenQA.Selenium
         [Test]
         [IgnoreBrowser(Browser.Android, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.Chrome, "Does not handle async alerts")]
+        [IgnoreBrowser(Browser.Edge, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.HtmlUnit, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.IE, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.IPhone, "Does not handle async alerts")]
@@ -280,6 +283,7 @@ namespace OpenQA.Selenium
         [Test]
         [IgnoreBrowser(Browser.Android, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.Chrome, "Does not handle async alerts")]
+        [IgnoreBrowser(Browser.Edge, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.HtmlUnit, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.IE, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.IPhone, "Does not handle async alerts")]
@@ -306,6 +310,7 @@ namespace OpenQA.Selenium
         [Test]
         [IgnoreBrowser(Browser.Android, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.Chrome, "Does not handle async alerts")]
+        [IgnoreBrowser(Browser.Edge, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.HtmlUnit, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.IE, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.IPhone, "Does not handle async alerts")]
@@ -330,10 +335,12 @@ namespace OpenQA.Selenium
         [Test]
         [IgnoreBrowser(Browser.Android, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.Chrome, "Does not handle async alerts")]
+        [IgnoreBrowser(Browser.Edge, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.HtmlUnit, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.IE, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.IPhone, "Does not handle async alerts")]
         [IgnoreBrowser(Browser.Opera, "Does not handle async alerts")]
+        [IgnoreBrowser(Browser.Safari, "Does not handle async alerts")]
         public void IncludesAlertTextInUnhandledAlertException()
         {
             driver.Manage().Timeouts().SetScriptTimeout(TimeSpan.FromSeconds(5));

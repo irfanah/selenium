@@ -131,10 +131,6 @@ public abstract class SeleniumBasedRequest extends HttpServletRequestWrapper {
    */
   public abstract Map<String, Object> extractDesiredCapability();
 
-  // TODO freynaud remove the TestSession parameter.The listener can modify the
-  // original request instead.
-  public abstract String getNewSessionRequestedCapability(TestSession session);
-
   public RequestType getRequestType() {
     return type;
   }
@@ -151,11 +147,10 @@ public abstract class SeleniumBasedRequest extends HttpServletRequestWrapper {
 
   @Override
   public int getContentLength() {
-    if (body == null){
+    if (body == null) {
       return 0;
-    }else {
-      return body.length;
     }
+    return body.length;
   }
 
   public String getBody() {
@@ -179,7 +174,7 @@ public abstract class SeleniumBasedRequest extends HttpServletRequestWrapper {
     setAttribute("Content-Length", content.length);
   }
 
-  public long getCreationTime(){
+  public long getCreationTime() {
     return timestamp;
   }
 

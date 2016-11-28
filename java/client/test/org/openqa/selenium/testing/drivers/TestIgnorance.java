@@ -22,6 +22,7 @@ import static org.openqa.selenium.Platform.LINUX;
 import static org.openqa.selenium.Platform.WINDOWS;
 import static org.openqa.selenium.testing.Driver.ALL;
 import static org.openqa.selenium.testing.Driver.CHROME;
+import static org.openqa.selenium.testing.Driver.EDGE;
 import static org.openqa.selenium.testing.Driver.FIREFOX;
 import static org.openqa.selenium.testing.Driver.HTMLUNIT;
 import static org.openqa.selenium.testing.Driver.IE;
@@ -150,9 +151,8 @@ public class TestIgnorance {
                       || method.getTestClass().getAnnotation(NeedsLocalEnvironment.class) != null;
     if (SauceDriver.shouldUseSauce()) {
       return isLocal;
-    } else {
-      return Boolean.getBoolean("local_only") && !isLocal;
     }
+    return Boolean.getBoolean("local_only") && !isLocal;
   }
 
   private boolean isIgnoredDueToJavascript(JavascriptEnabled enabled) {
@@ -179,6 +179,10 @@ public class TestIgnorance {
     switch (browser) {
       case chrome:
         comparator.addDriver(CHROME);
+        break;
+
+      case edge:
+        comparator.addDriver(EDGE);
         break;
 
       case ff:

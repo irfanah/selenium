@@ -20,37 +20,26 @@
 module Selenium
   module WebDriver
     module Edge
-
+      #
       # @api private
+      #
+
       class Bridge < Remote::W3CBridge
-
         def initialize(opts = {})
+          port = opts.delete(:port) || Service::DEFAULT_PORT
+          service_args = opts.delete(:service_args) || {}
 
-          http_client = opts.delete(:http_client)
-
-          if opts.has_key?(:url)
-            url = opts.delete(:url)
-          else
-            @service = Service.default_service(*extract_service_args(opts))
-
-            if @service.instance_variable_get("@host") == "127.0.0.1"
-              @service.instance_variable_set("@host", 'localhost')
-            end
-
+          unless opts.key?(:url)
+            driver_path = opts.delete(:driver_path) || Edge.driver_path(false)
+            @service = Service.new(driver_path, port, *extract_service_args(service_args))
+            @service.host = 'localhost' if @service.host == '127.0.0.1'
             @service.start
-
-            url = @service.uri
+            opts[:url] = @service.uri
           end
 
-          caps = create_capabilities(opts)
+          opts[:desired_capabilities] ||= Remote::W3CCapabilities.edge
 
-          remote_opts = {
-            :url                  => url,
-            :desired_capabilities => caps
-          }
-
-          remote_opts.merge!(:http_client => http_client) if http_client
-          super(remote_opts)
+          super(opts)
         end
 
         def browser
@@ -64,6 +53,20 @@ module Selenium
           ]
         end
 
+        def commands(command)
+          unsupported = %i[execute_script execute_async_script submit_element double_click
+           mouse_down mouse_up mouse_move_to click
+           send_keys_to_active_element get_window_handles get_current_window_handle
+           get_window_size set_window_size get_window_position set_window_position
+           maximize_window get_alert_text accept_alert dismiss_alert]
+          if unsupported.include? command
+            Remote::Bridge::COMMANDS[command]
+          else
+            super
+          end
+
+        end
+
         def capabilities
           @capabilities ||= Remote::Capabilities.edge
         end
@@ -74,31 +77,96 @@ module Selenium
           @service.stop if @service
         end
 
+        def execute_script(script, *args)
+          result = execute :execute_script, {}, {script: script, args: args}
+          unwrap_script_result result
+        end
+
+        def execute_async_script(script, *args)
+          result = execute :execute_async_script, {}, {script: script, args: args}
+          unwrap_script_result result
+        end
+
+        def submit_element(element)
+          execute :submit_element, id: element['ELEMENT']
+        end
+
+        def double_click
+          execute :double_click
+        end
+
+        def click
+          execute :click, {}, {button: 0}
+        end
+
+        def context_click
+          execute :click, {}, {button: 2}
+        end
+
+        def mouse_down
+          execute :mouse_down
+        end
+
+        def mouse_up
+          execute :mouse_up
+        end
+
+        def mouse_move_to(element, x = nil, y = nil)
+          element_id = element['ELEMENT'] if element
+          params = {element: element_id}
+
+          if x && y
+            params[:xoffset] = x
+            params[:yoffset] = y
+          end
+
+          execute :mouse_move_to, {}, params
+        end
+
+        def send_keys_to_active_element(key)
+          execute :send_keys_to_active_element, {}, {value: key}
+        end
+
+        def window_handle
+          execute :get_current_window_handle
+        end
+
+        def window_size(handle = :current)
+          data = execute :get_window_size, window_handle: handle
+
+          Dimension.new data['width'], data['height']
+        end
+
+        def resize_window(width, height, handle = :current)
+          execute :set_window_size, {window_handle: handle},
+                  {width: width,
+                   height: height}
+        end
+
+        def window_position(handle = :current)
+          data = execute :get_window_position, window_handle: handle
+
+          Point.new data['x'], data['y']
+        end
+
+        def reposition_window(x, y, handle = :current)
+          execute :set_window_position, {window_handle: handle},
+                  {x: x, y: y}
+        end
+
+        def maximize_window(handle = :current)
+          execute :maximize_window, window_handle: handle
+        end
+
         private
 
-        def create_capabilities(opts)
-          caps               = opts.delete(:desired_capabilities) { Remote::W3CCapabilities.edge }
-          page_load_strategy = opts.delete(:page_load_strategy) || "normal"
-
-          unless opts.empty?
-            raise ArgumentError, "unknown option#{'s' if opts.size != 1}: #{opts.inspect}"
-          end
-
-          caps['page_load_strategy'] = page_load_strategy
-
-          caps
+        def extract_service_args(args = {})
+          service_args = []
+          service_args << "–host=#{args[:host]}" if args.key? :host
+          service_args << "–package=#{args[:package]}" if args.key? :package
+          service_args << "-verbose" if args[:verbose] == true
+          service_args
         end
-
-        def extract_service_args(opts)
-          args = []
-
-          if opts.has_key?(:service_log_path)
-            args << "--log-path=#{opts.delete(:service_log_path)}"
-          end
-
-          args
-        end
-
       end # Bridge
     end # Edge
   end # WebDriver

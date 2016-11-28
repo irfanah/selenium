@@ -90,6 +90,7 @@ public class JdkAugmenter extends BaseAugmenter {
       Class<?> interfaceProvided = augmenter.getDescribedInterface();
       checkState(interfaceProvided.isInterface(),
           "JdkAugmenter can only augment interfaces. %s is not an interface.", interfaceProvided);
+      proxiedInterfaces.add(interfaceProvided);
       InterfaceImplementation augmentedImplementation = augmenter.getImplementation(value);
       for (Method method : interfaceProvided.getMethods()) {
         InterfaceImplementation oldHandler = augmentationHandlers.put(method,
@@ -134,9 +135,8 @@ public class JdkAugmenter extends BaseAugmenter {
         System.out.println("Method: " + method + "all handlers: " + handlers.keySet());
         if (null == handler) {
           return method.invoke(realInstance, args);
-        } else {
-          return handler.invoke(new RemoteExecuteMethod(driver), proxy, method, args);
         }
+        return handler.invoke(new RemoteExecuteMethod(driver), proxy, method, args);
       } catch (InvocationTargetException i) {
         throw i.getCause();
       }

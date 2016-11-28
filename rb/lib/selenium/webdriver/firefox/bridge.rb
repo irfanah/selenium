@@ -20,39 +20,22 @@
 module Selenium
   module WebDriver
     module Firefox
-
       # @api private
       class Bridge < Remote::Bridge
-
         def initialize(opts = {})
-          port        = opts.delete(:port) || DEFAULT_PORT
-          profile     = opts.delete(:profile)
-          http_client = opts.delete(:http_client)
-          proxy       = opts.delete(:proxy)
-
-          caps = opts.delete(:desired_capabilities) { Remote::Capabilities.firefox }
-
-          Binary.path = caps[:firefox_binary] if caps[:firefox_binary]
+          port = opts.delete(:port) || DEFAULT_PORT
+          profile = opts.delete(:profile)
 
           @launcher = create_launcher(port, profile)
-
-          unless opts.empty?
-            raise ArgumentError, "unknown option#{'s' if opts.size != 1}: #{opts.inspect}"
-          end
-
           @launcher.launch
+          opts[:url] = @launcher.url
 
-          caps.proxy = proxy if proxy
-
-          remote_opts = {
-            :url                  => @launcher.url,
-            :desired_capabilities => caps
-          }
-
-          remote_opts.merge!(:http_client => http_client) if http_client
+          caps = opts[:desired_capabilities] ||= Remote::Capabilities.firefox
+          caps.proxy = opts.delete(:proxy) if opts.key?(:proxy)
+          Binary.path = caps[:firefox_binary] if caps[:firefox_binary]
 
           begin
-            super(remote_opts)
+            super(opts)
           rescue
             @launcher.quit
             raise
@@ -82,7 +65,6 @@ module Selenium
         def create_launcher(port, profile)
           Launcher.new Binary.new, port, profile
         end
-
       end # Bridge
     end # Firefox
   end # WebDriver

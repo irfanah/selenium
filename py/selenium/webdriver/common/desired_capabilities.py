@@ -19,6 +19,7 @@
 The Desired Capabilities implementation.
 """
 
+
 class DesiredCapabilities(object):
     """
     Set of default supported desired capabilities.
@@ -26,8 +27,7 @@ class DesiredCapabilities(object):
     Use this as a starting point for creating a desired capabilities object for
     requesting remote webdrivers for connecting to selenium server or selenium grid.
 
-
-    Usage Example:
+    Usage Example::
 
         from selenium import webdriver
 
@@ -52,7 +52,7 @@ class DesiredCapabilities(object):
         "version": "",
         "platform": "ANY",
         "javascriptEnabled": True,
-        "marionette": False,
+        "marionette": True,
     }
 
     INTERNETEXPLORER = {
@@ -124,7 +124,7 @@ class DesiredCapabilities(object):
     }
 
     PHANTOMJS = {
-        "browserName":"phantomjs",
+        "browserName": "phantomjs",
         "version": "",
         "platform": "ANY",
         "javascriptEnabled": True,

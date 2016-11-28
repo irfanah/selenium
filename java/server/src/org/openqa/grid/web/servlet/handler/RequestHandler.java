@@ -84,8 +84,6 @@ public class RequestHandler implements Comparable<RequestHandler> {
   public void forwardNewSessionRequestAndUpdateRegistry(TestSession session)
       throws NewSessionException {
     try {
-      String content = request.getNewSessionRequestedCapability(session);
-      getRequest().setBody(content);
       session.forward(getRequest(), getResponse(), true);
     } catch (IOException e) {
       //log.warning("Error forwarding the request " + e.getMessage());
@@ -131,7 +129,7 @@ public class RequestHandler implements Comparable<RequestHandler> {
         } catch (ClientGoneException e) {
           log.log(Level.WARNING, "The client is gone for session " + session + ", terminating");
           registry.terminate(session, SessionTerminationReason.CLIENT_GONE);
-        } catch (SocketTimeoutException e){
+        } catch (SocketTimeoutException e) {
           log.log(Level.SEVERE, "Socket timed out for session " + session + ", " + e.getMessage());
           registry.terminate(session, SessionTerminationReason.SO_TIMEOUT);
         } catch (Throwable t) {
@@ -185,10 +183,11 @@ public class RequestHandler implements Comparable<RequestHandler> {
    */
   public void waitForSessionBound() throws InterruptedException, TimeoutException {
     // Maintain compatibility with Grid 1.x, which had the ability to
-    // specify how long to wait before canceling
-    // a request.
-    if (registry.getConfiguration().newSessionWaitTimeout > 0) {
-      if (!sessionAssigned.await(registry.getConfiguration().newSessionWaitTimeout, TimeUnit.MILLISECONDS)) {
+    // specify how long to wait before canceling a request.
+    Integer newSessionWaitTimeout = registry.getConfiguration().newSessionWaitTimeout != null ?
+                                    registry.getConfiguration().newSessionWaitTimeout : 0;
+    if (newSessionWaitTimeout > 0) {
+      if (!sessionAssigned.await(newSessionWaitTimeout.longValue(), TimeUnit.MILLISECONDS)) {
         throw new TimeoutException("Request timed out waiting for a node to become available.");
       }
     } else {
@@ -215,9 +214,8 @@ public class RequestHandler implements Comparable<RequestHandler> {
     if (registry.getConfiguration().prioritizer != null) {
       return registry.getConfiguration().prioritizer.compareTo(this.getRequest().getDesiredCapabilities(), o.getRequest()
           .getDesiredCapabilities());
-    } else {
-      return 0;
     }
+    return 0;
   }
 
   protected void setSession(TestSession session) {
@@ -245,9 +243,8 @@ public class RequestHandler implements Comparable<RequestHandler> {
   public ExternalSessionKey getServerSession() {
     if (session == null) {
       return null;
-    } else {
-      return session.getExternalKey();
     }
+    return session.getExternalKey();
   }
 
   public void stop() {
