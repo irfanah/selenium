@@ -17,15 +17,14 @@
 
 package org.openqa.selenium.firefox;
 
-import static org.openqa.selenium.Platform.WINDOWS;
 import static org.openqa.selenium.firefox.FirefoxOptions.FIREFOX_OPTIONS;
-import static org.openqa.selenium.firefox.FirefoxOptions.OLD_FIREFOX_OPTIONS;
 import static org.openqa.selenium.remote.CapabilityType.ACCEPT_SSL_CERTS;
-import static org.openqa.selenium.remote.CapabilityType.HAS_NATIVE_EVENTS;
 import static org.openqa.selenium.remote.CapabilityType.LOGGING_PREFS;
 import static org.openqa.selenium.remote.CapabilityType.PROXY;
 import static org.openqa.selenium.remote.CapabilityType.SUPPORTS_WEB_STORAGE;
+import static org.openqa.selenium.remote.CapabilityType.VERSION;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
@@ -34,15 +33,11 @@ import com.google.common.collect.Sets;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.NoSuchSessionException;
 import org.openqa.selenium.OutputType;
-import org.openqa.selenium.Platform;
 import org.openqa.selenium.Proxy;
 import org.openqa.selenium.SessionNotCreatedException;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.firefox.internal.NewProfileExtensionConnection;
 import org.openqa.selenium.firefox.internal.ProfilesIni;
-import org.openqa.selenium.html5.LocalStorage;
-import org.openqa.selenium.html5.SessionStorage;
 import org.openqa.selenium.internal.Killable;
 import org.openqa.selenium.internal.Lock;
 import org.openqa.selenium.internal.SocketLock;
@@ -113,9 +108,6 @@ public class FirefoxDriver extends RemoteWebDriver implements Killable {
   public static final String PROFILE = "firefox_profile";
   public static final String MARIONETTE = "marionette";
 
-  // For now, only enable native events on Windows
-  public static final boolean DEFAULT_ENABLE_NATIVE_EVENTS = Platform.getCurrent().is(WINDOWS);
-
   // Accept untrusted SSL certificates.
   @Deprecated
   public static final boolean ACCEPT_UNTRUSTED_CERTIFICATES = true;
@@ -135,17 +127,28 @@ public class FirefoxDriver extends RemoteWebDriver implements Killable {
   }
 
   public FirefoxDriver(Capabilities desiredCapabilities) {
-    this(getBinary(desiredCapabilities), extractProfile(desiredCapabilities, null),
-        desiredCapabilities);
+    this(getBinary(desiredCapabilities), null, desiredCapabilities);
   }
 
   public FirefoxDriver(Capabilities desiredCapabilities, Capabilities requiredCapabilities) {
-    this(getBinary(desiredCapabilities), extractProfile(desiredCapabilities, requiredCapabilities),
-        desiredCapabilities, requiredCapabilities);
+    this(getBinary(desiredCapabilities), null, desiredCapabilities, requiredCapabilities);
+  }
+
+  private static FirefoxProfile prepareProfile(FirefoxProfile profile,
+                                               Capabilities desiredCapabilities,
+                                               Capabilities requiredCapabilities) {
+    if (profile == null) {
+      profile = extractProfile(desiredCapabilities, requiredCapabilities);
+    }
+
+    populateProfile(profile, desiredCapabilities);
+    populateProfile(profile, requiredCapabilities);
+
+    return profile;
   }
 
   private static FirefoxProfile extractProfile(Capabilities desiredCapabilities,
-      Capabilities requiredCapabilities) {
+                                               Capabilities requiredCapabilities) {
 
     FirefoxProfile profile = null;
     Object raw = null;
@@ -166,18 +169,50 @@ public class FirefoxDriver extends RemoteWebDriver implements Killable {
         }
       }
     }
-    profile = getProfile(profile);
-
-    populateProfile(profile, desiredCapabilities);
-    populateProfile(profile, requiredCapabilities);
-
-    return profile;
+    return getProfile(profile);
   }
 
-  static Capabilities populateProfile(FirefoxProfile profile, Capabilities capabilities) {
-    if (capabilities == null) {
-      return capabilities;
+  private static Capabilities addProfileTo(Capabilities capabilities, FirefoxProfile profile) {
+    DesiredCapabilities toReturn =
+        capabilities == null ? new DesiredCapabilities() :
+        capabilities instanceof DesiredCapabilities ? (DesiredCapabilities) capabilities :
+        new DesiredCapabilities(capabilities);
+
+    // legacy driver
+    toReturn.setCapability(FirefoxDriver.PROFILE, profile);
+
+    // geckodriver
+    FirefoxOptions options = new FirefoxOptions();
+    if (capabilities != null) {
+      Object rawOptions = capabilities.getCapability(FIREFOX_OPTIONS);
+      if (rawOptions != null) {
+        if (rawOptions instanceof Map) {
+          try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) rawOptions;
+            rawOptions = FirefoxOptions.fromJsonMap(map);
+          } catch (IOException e) {
+            throw new WebDriverException(e);
+          }
+        }
+        if (rawOptions != null && !(rawOptions instanceof FirefoxOptions)) {
+          throw new WebDriverException("Firefox option was set, but is not a FirefoxOption: " + rawOptions);
+        }
+        options = (FirefoxOptions) rawOptions;
+      }
     }
+    options.setProfileSafely(profile);
+    toReturn.setCapability(FIREFOX_OPTIONS, options);
+
+    return toReturn;
+  }
+
+  private static void populateProfile(FirefoxProfile profile, Capabilities capabilities) {
+    Preconditions.checkNotNull(profile);
+    if (capabilities == null) {
+      return;
+    }
+
     if (capabilities.getCapability(SUPPORTS_WEB_STORAGE) != null) {
       Boolean supportsWebStorage = (Boolean) capabilities.getCapability(SUPPORTS_WEB_STORAGE);
       profile.setPreference("dom.storage.enabled", supportsWebStorage.booleanValue());
@@ -194,71 +229,58 @@ public class FirefoxDriver extends RemoteWebDriver implements Killable {
             logsPrefs.getLevel(logtype).intValue());
       }
     }
-
-    if (capabilities.getCapability(HAS_NATIVE_EVENTS) != null) {
-      Boolean nativeEventsEnabled = (Boolean) capabilities.getCapability(HAS_NATIVE_EVENTS);
-      profile.setEnableNativeEvents(nativeEventsEnabled);
-    }
-
-    Object rawOptions = capabilities.getCapability(FIREFOX_OPTIONS);
-    if (rawOptions instanceof Map) {
-      try {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) rawOptions;
-        rawOptions = FirefoxOptions.fromJsonMap(map);
-      } catch (IOException e) {
-        throw new WebDriverException(e);
-      }
-    }
-    if (rawOptions == null) {
-      rawOptions = capabilities.getCapability(OLD_FIREFOX_OPTIONS);
-    }
-    if (rawOptions != null && !(rawOptions instanceof FirefoxOptions)) {
-      throw new WebDriverException("Firefox option was set, but is not a FirefoxOption: " + rawOptions);
-    }
-    FirefoxOptions options = (FirefoxOptions) rawOptions;
-    if (options == null) {
-      options = new FirefoxOptions();
-    }
-    options.setProfileSafely(profile);
-
-    DesiredCapabilities toReturn = capabilities instanceof DesiredCapabilities ?
-                                   (DesiredCapabilities) capabilities :
-                                   new DesiredCapabilities(capabilities);
-    toReturn.setCapability(OLD_FIREFOX_OPTIONS, options);
-    toReturn.setCapability(FIREFOX_OPTIONS, options);
-    return toReturn;
   }
 
   private static FirefoxBinary getBinary(Capabilities capabilities) {
-    if (capabilities != null && capabilities.getCapability(BINARY) != null) {
-      Object raw = capabilities.getCapability(BINARY);
-      if (raw instanceof FirefoxBinary) {
-        return (FirefoxBinary) raw;
+    if (capabilities != null) {
+      if (capabilities.getCapability(BINARY) != null) {
+        Object raw = capabilities.getCapability(BINARY);
+        if (raw instanceof FirefoxBinary) {
+          return (FirefoxBinary) raw;
+        }
+        File file = new File((String) raw);
+        try {
+          return new FirefoxBinary(file);
+        } catch (WebDriverException wde) {
+          throw new SessionNotCreatedException(wde.getMessage());
+        }
       }
-      File file = new File((String) raw);
-      try {
-        return new FirefoxBinary(file);
-      } catch (WebDriverException wde) {
-        throw new SessionNotCreatedException(wde.getMessage());
+
+      if (capabilities.getCapability(VERSION) != null) {
+        try {
+          FirefoxBinary.Channel channel = FirefoxBinary.Channel.fromString(
+            (String) capabilities.getCapability(VERSION));
+          return new FirefoxBinary(channel);
+        } catch (WebDriverException ex) {
+          return new FirefoxBinary((String) capabilities.getCapability(VERSION));
+        }
       }
     }
     return new FirefoxBinary();
   }
 
   public FirefoxDriver(FirefoxBinary binary, FirefoxProfile profile) {
-    this(binary, profile, populateProfile(profile, DesiredCapabilities.firefox()));
+    this(binary, profile, DesiredCapabilities.firefox());
   }
 
   public FirefoxDriver(FirefoxBinary binary, FirefoxProfile profile, Capabilities capabilities) {
-    this(binary, profile, populateProfile(profile, capabilities), null);
+    this(binary, profile, capabilities, null);
   }
 
   public FirefoxDriver(FirefoxBinary binary, FirefoxProfile profile,
       Capabilities desiredCapabilities, Capabilities requiredCapabilities) {
-    this(createCommandExecutor(populateProfile(profile, desiredCapabilities), binary, profile),
-         populateProfile(profile, desiredCapabilities), requiredCapabilities);
+    this(createCommandExecutor(desiredCapabilities, requiredCapabilities, binary, profile),
+         addProfileTo(desiredCapabilities, prepareProfile(profile, desiredCapabilities, requiredCapabilities)),
+         requiredCapabilities);
     this.binary = binary;
+  }
+
+  public FirefoxDriver(GeckoDriverService driverService) {
+    this(new DriverCommandExecutor(driverService), null, null);
+  }
+
+  public FirefoxDriver(GeckoDriverService driverService, Capabilities desiredCapabilities) {
+    this(new DriverCommandExecutor(driverService), desiredCapabilities, null);
   }
 
   public FirefoxDriver(GeckoDriverService driverService, Capabilities desiredCapabilities,
@@ -273,19 +295,20 @@ public class FirefoxDriver extends RemoteWebDriver implements Killable {
           dropCapabilities(requiredCapabilities));
   }
 
-  private static final CommandExecutor createCommandExecutor(Capabilities desiredCapabilities,
+  private static CommandExecutor createCommandExecutor(Capabilities desiredCapabilities,
+                                                             Capabilities requiredCapabilities,
                                                              FirefoxBinary binary,
                                                              FirefoxProfile profile) {
     if (isLegacy(desiredCapabilities)) {
+      if (profile == null) {
+        profile = extractProfile(desiredCapabilities, requiredCapabilities);
+      }
       return new LazyCommandExecutor(binary, profile);
     }
-    GeckoDriverService.Builder builder;
-    if (binary == null) {
-      builder = new GeckoDriverService.Builder();
-    } else {
-      builder = new GeckoDriverService.Builder(binary);
+    GeckoDriverService.Builder builder = new GeckoDriverService.Builder().usingPort(0);
+    if (binary != null) {
+      builder.usingFirefoxBinary(binary);
     }
-    builder.usingPort(0);
     return new DriverCommandExecutor(builder.build());
   }
 

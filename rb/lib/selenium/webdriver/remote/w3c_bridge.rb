@@ -108,9 +108,6 @@ module Selenium
         end
 
         def create_session(desired_capabilities)
-          # TODO - Remove this when Mozilla fixes bug
-          desired_capabilities[:browser_name] = 'firefox' if desired_capabilities[:browser_name] == 'Firefox'
-
           resp = raw_execute :new_session, {}, {desiredCapabilities: desired_capabilities}
           @session_id = resp['sessionId']
           return W3CCapabilities.json_create resp['value'] if @session_id
@@ -151,7 +148,7 @@ module Selenium
         end
 
         def alert=(keys)
-          execute :send_alert_text, {}, {handler: 'prompt', text: keys}
+          execute :send_alert_text, {}, {value: keys.split(//)}
         end
 
         def alert_text
@@ -257,12 +254,13 @@ module Selenium
           Dimension.new data['width'], data['height']
         end
 
-        def reposition_window(_x, _y, _handle = nil)
-          raise Error::UnsupportedOperationError, 'The W3C standard does not currently support setting the Window Position'
+        def reposition_window(x, y)
+          execute :set_window_position, {}, {x: x, y: y}
         end
 
-        def window_position(_handle = nil)
-          raise Error::UnsupportedOperationError, 'The W3C standard does not currently support getting the Window Position'
+        def window_position
+          data = execute :get_window_position
+          Point.new data['x'], data['y']
         end
 
         def screenshot

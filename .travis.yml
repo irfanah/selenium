@@ -120,94 +120,92 @@ matrix:
       addons:
         firefox: latest
     - language: python
-      python: 3.5
+      python: 3.6
       env: TOXENV=flake8
     - language: python
-      python: 3.5
+      python: 3.6
       env: TOXENV=docs
     - language: python
-      python: 3.5
-      env: CHROME=1 TOXENV=py35-chrome
+      python: 3.6
+      env: CHROME=1 TOXENV=py36-chrome
     - language: python
-      python: 3.5
-      env: TOXENV=py35-firefox
+      python: 3.6
+      env: TOXENV=py36-firefox
       addons:
         firefox: latest-esr
     - language: python
-      python: 3.5
-      env: MARIONETTE=1 TOXENV=py35-marionette
+      python: 3.6
+      env: MARIONETTE=1 TOXENV=py36-marionette
       addons:
         firefox: latest
     - language: python
-      python: 3.5
-      env: PHANTOMJS=1 TOXENV=py35-phantomjs
+      python: 3.6
+      env: PHANTOMJS=1 TOXENV=py36-phantomjs
     - language: python
-      python: 3.5
-      env: TOXENV=py35-remote
+      python: 3.6
+      env: TOXENV=py36-remote
       addons:
         firefox: latest
     - language: ruby
-      rvm: 2.2.3
+      rvm: 2.3.3
       jdk: oraclejdk8
       env: TASK=//rb:unit-test
     - language: ruby
-      rvm: 2.2.3
+      rvm: 2.3.3
       jdk: oraclejdk8
       env: CHROME=1 TASK=//rb:chrome-test
     - language: ruby
-      rvm: 2.2.3
+      rvm: 2.3.3
       jdk: oraclejdk8
       env: MARIONETTE=1 TASK=//rb:firefox-test
       addons:
-        firefox: latest
+        firefox: latest-nightly
     - language: ruby
-      rvm: 2.2.3
+      rvm: 2.3.3
       jdk: oraclejdk8
       env: TASK=//rb:ff-legacy-test
       addons:
         firefox: latest-esr
     - language: ruby
-      rvm: 2.2.3
+      rvm: 2.3.3
       jdk: oraclejdk8
       env: PHANTOMJS=1 TASK=//rb:phantomjs-test
     - language: ruby
-      rvm: 2.2.3
+      rvm: 2.3.3
       jdk: oraclejdk8
       env: CHROME=1 TASK=//rb:remote-chrome-test
     - language: ruby
-      rvm: 2.2.3
+      rvm: 2.3.3
       jdk: oraclejdk8
       env: MARIONETTE=1 TASK=//rb:remote-firefox-test
       addons:
-        firefox: latest
+        firefox: latest-nightly
     - language: ruby
-      rvm: 2.2.3
+      rvm: 2.3.3
       jdk: oraclejdk8
       env: TASK=//rb:remote-ff-legacy-test
       addons:
         firefox: latest-esr
     - language: ruby
-      rvm: 2.2.3
+      rvm: 2.3.3
       jdk: oraclejdk8
       env: PHANTOMJS=1 TASK=//rb:remote-phantomjs-test
     - language: ruby
-      rvm: 2.2.3
+      rvm: 2.3.3
       jdk: oraclejdk8
       env: TASK=//rb:docs
   fast_finish: true
   allow_failures:
-    - env: TASK="calcdeps //javascript/atoms:atoms-firefox:run"
     - env: TASK="calcdeps //javascript/webdriver:webdriver-firefox:run"
     - env: CHROME=1 TASK=//java/client/test/com/thoughtworks/selenium:chrome-rc-test:run
-    - env: MARIONETTE=1 TASK=//java/client/test/org/openqa/selenium/firefox:marionette:run
     - env: TASK=//java/client/test/com/thoughtworks/selenium:firefox-rc-test:run
     - env: TOXENV=py27-firefox
     - env: MARIONETTE=1 TOXENV=py27-marionette
     - env: TOXENV=py27-remote
-    - env: TOXENV=py35-firefox
-    - env: MARIONETTE=1 TOXENV=py35-marionette
-    - env: TOXENV=py35-remote
-    - env: MARIONETTE=1 TASK=//rb:remote-firefox-test
+    - env: TOXENV=py36-firefox
+    - env: MARIONETTE=1 TOXENV=py36-marionette
+    - env: TOXENV=py36-remote
+    - env: PHANTOMJS=1 TASK=//rb:remote-phantomjs-test
     - env: TASK=//rb:docs
 before_install: ./scripts/travis/before_install.sh
 install: ./scripts/travis/install.sh

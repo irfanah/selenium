@@ -169,8 +169,11 @@ class RemoteConnection(object):
         addr = parsed_url.hostname
         if parsed_url.hostname and resolve_ip:
             port = parsed_url.port or None
-            ip = common_utils.find_connectable_ip(parsed_url.hostname,
-                                                  port=port)
+            if parsed_url.scheme == "https":
+                ip = parsed_url.hostname
+            else:
+                ip = common_utils.find_connectable_ip(parsed_url.hostname,
+                                                      port=port)
             if ip:
                 netloc = ip
                 addr = netloc
@@ -467,6 +470,10 @@ class RemoteConnection(object):
 
             request.add_header('Accept', 'application/json')
             request.add_header('Content-Type', 'application/json;charset=UTF-8')
+
+            if parsed_url.username:
+                base64string = base64.b64encode('%s:%s' % (parsed_url.username, parsed_url.password))
+                request.add_header("Authorization", "Basic %s" % base64string)
 
             if password_manager:
                 opener = url_request.build_opener(url_request.HTTPRedirectHandler(),

@@ -1,6 +1,16 @@
 ## v.next
 
 * The `lib` package is once again platform agnostic (excluding `lib/devmode`).
+* Deprecated `promise.when(value, callback, errback)`.
+  Use `promise.fulfilled(value).then(callback, errback)`
+* Changed `promise.fulfilled(value)`, `promise.rejected(reason)` and
+  `promise.defer()` to all use native promises when the promise manager is
+  disabled.
+* Properly handle W3C error responses to new session commands.
+* Updated `selenium-webdriver/testing` to export `describe.only` along with
+  `describe.skip`.
+* Fixed `selenium-webdriver/lib/until.ableToSwitchToFrame`. It was previously
+  dropping arguments and would never work.
 
 ## v3.0.1
 

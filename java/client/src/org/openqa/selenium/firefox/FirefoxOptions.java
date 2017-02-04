@@ -21,7 +21,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.openqa.selenium.firefox.FirefoxDriver.BINARY;
 import static org.openqa.selenium.firefox.FirefoxDriver.PROFILE;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -57,8 +56,6 @@ import java.util.logging.Level;
 public class FirefoxOptions {
 
   public final static String FIREFOX_OPTIONS = "moz:firefoxOptions";
-  // TODO(simons): remove once geckodriver 0.12 ships
-  public final static String OLD_FIREFOX_OPTIONS = "firefoxOptions";
 
   private String binary;
   private FirefoxProfile profile;
@@ -139,11 +136,12 @@ public class FirefoxOptions {
     return this;
   }
 
+  public FirefoxProfile getProfile() {
+    return this.profile;
+  }
+
   // Confusing API. Keeping package visible only
   FirefoxOptions setProfileSafely(FirefoxProfile profile) {
-    Preconditions.checkState(
-      this.profile == null || this.profile.equals(profile),
-      "Profile passed to options is different from existing profile that has been set.");
     if (profile == null) {
       return this;
     }
@@ -189,11 +187,6 @@ public class FirefoxOptions {
 
     Object priorProfile = capabilities.getCapability(PROFILE);
     if (priorProfile != null) {
-      if (!booleanPrefs.isEmpty() || !intPrefs.isEmpty() || !stringPrefs.isEmpty()) {
-        throw new IllegalStateException(
-          "Unable to determine if preferences set on this option " +
-          "are the same as the profile in the capabilities");
-      }
       if (!priorProfile.equals(profile)) {
         throw new IllegalStateException(
           "Profile has been set on both the capabilities and these options, but they're " +
@@ -202,7 +195,6 @@ public class FirefoxOptions {
     }
 
     capabilities.setCapability(FIREFOX_OPTIONS, this);
-    capabilities.setCapability(OLD_FIREFOX_OPTIONS, this);
 
     if (binary != null) {
       FirefoxBinary actualBinary = new FirefoxBinary(new File(binary));

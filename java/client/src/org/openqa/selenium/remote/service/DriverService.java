@@ -27,13 +27,14 @@ import com.google.common.collect.ImmutableMap;
 
 import org.openqa.selenium.Beta;
 import org.openqa.selenium.WebDriverException;
-import org.openqa.selenium.io.FileHandler;
 import org.openqa.selenium.net.PortProber;
 import org.openqa.selenium.net.UrlChecker;
 import org.openqa.selenium.os.CommandLine;
+import org.openqa.selenium.os.ExecutableFinder;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
@@ -68,6 +69,7 @@ public class DriverService {
   private final String executable;
   private final ImmutableList<String> args;
   private final ImmutableMap<String, String> environment;
+  private OutputStream outputStream = System.err;
 
   /**
   *
@@ -104,7 +106,7 @@ public class DriverService {
    */
   protected static File findExecutable(String exeName, String exeProperty, String exeDocs,
       String exeDownload) {
-    String defaultPath = CommandLine.find(exeName);
+    String defaultPath = new ExecutableFinder().find(exeName);
     String exePath = System.getProperty(exeProperty, defaultPath);
     checkState(exePath != null,
         "The path to the driver executable must be set by the %s system property;"
@@ -122,7 +124,7 @@ public class DriverService {
         "The driver executable does not exist: %s", exe.getAbsolutePath());
     checkState(!exe.isDirectory(),
         "The driver executable is a directory: %s", exe.getAbsolutePath());
-    checkState(FileHandler.canExecute(exe),
+    checkState(exe.canExecute(),
         "The driver is not executable: %s", exe.getAbsolutePath());
   }
 
@@ -160,7 +162,7 @@ public class DriverService {
       }
       process = new CommandLine(this.executable, args.toArray(new String[] {}));
       process.setEnvironmentVariables(environment);
-      process.copyOutputTo(System.err);
+      process.copyOutputTo(outputStream);
       process.executeAsync();
 
       waitUntilAvailable();
@@ -202,6 +204,10 @@ public class DriverService {
       process = null;
       lock.unlock();
     }
+  }
+
+  public void sendOutputTo(OutputStream outputStream) {
+    this.outputStream = outputStream;
   }
 
   public static abstract class Builder<DS extends DriverService, B extends Builder> {

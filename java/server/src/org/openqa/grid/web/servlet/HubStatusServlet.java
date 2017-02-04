@@ -27,7 +27,6 @@ import com.google.gson.JsonSyntaxException;
 import org.openqa.grid.common.exception.GridException;
 import org.openqa.grid.internal.Registry;
 import org.openqa.grid.internal.RemoteProxy;
-import org.openqa.grid.internal.TestSlot;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -134,24 +133,16 @@ public class HubStatusServlet extends RegistryBasedServlet {
   }
 
   private JsonObject getSlotCounts() {
-    int freeSlots = 0;
     int totalSlots = 0;
+    int usedSlots = 0;
 
     for (RemoteProxy proxy : getRegistry().getAllProxies()) {
-      for (TestSlot slot : proxy.getTestSlots()) {
-        if (slot.getSession() == null) {
-          freeSlots += 1;
-        }
-
-        totalSlots += 1;
-      }
+      totalSlots += Math.min(proxy.getMaxNumberOfConcurrentTestSessions(), proxy.getTestSlots().size());
+      usedSlots += proxy.getTotalUsed();
     }
-
     JsonObject result = new JsonObject();
-
-    result.addProperty("free", freeSlots);
+    result.addProperty("free", totalSlots - usedSlots);
     result.addProperty("total", totalSlots);
-
     return result;
   }
 

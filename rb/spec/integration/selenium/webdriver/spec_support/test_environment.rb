@@ -127,23 +127,6 @@ module Selenium
           @root ||= Pathname.new('../../../../../../../').expand_path(__FILE__)
         end
 
-        private
-
-        def create_driver
-          method = "create_#{driver}_driver".to_sym
-          instance = if private_methods.include?(method)
-                       send method
-                     else
-                       WebDriver::Driver.for(driver)
-                     end
-          @create_driver_error_count -= 1 unless @create_driver_error_count == 0
-          instance
-        rescue => ex
-          @create_driver_error = ex
-          @create_driver_error_count += 1
-          raise ex
-        end
-
         def remote_capabilities
           opt = {}
           browser_name = if browser == :ff_legacy
@@ -160,12 +143,34 @@ module Selenium
 
           caps = WebDriver::Remote::Capabilities.send(browser_name, opt)
 
+          if browser_name == :safari
+            tech_preview_driver = "/Applications/Safari\ Technology\ Preview.app/Contents/MacOS/safaridriver"
+            caps["safari.options"] = {'technologyPreview' => true} if File.exist?(tech_preview_driver)
+          end
+
           unless caps.is_a? WebDriver::Remote::W3CCapabilities
             caps.javascript_enabled = true
             caps.css_selectors_enabled = true
           end
 
           caps
+        end
+
+        private
+
+        def create_driver
+          method = "create_#{driver}_driver".to_sym
+          instance = if private_methods.include?(method)
+                       send method
+                     else
+                       WebDriver::Driver.for(driver)
+                     end
+          @create_driver_error_count -= 1 unless @create_driver_error_count == 0
+          instance
+        rescue => ex
+          @create_driver_error = ex
+          @create_driver_error_count += 1
+          raise ex
         end
 
         MAX_ERRORS = 4
@@ -227,8 +232,12 @@ module Selenium
         end
 
         def create_safari_driver
-          WebDriver::Safari.driver_path = ENV['SAFARIDRIVER'] if ENV['SAFARIDRIVER']
-          WebDriver::Driver.for :safari
+          driver_path = ENV['SAFARIDRIVER']
+          tech_preview_driver = "/Applications/Safari\ Technology\ Preview.app/Contents/MacOS/safaridriver"
+          driver_path ||= tech_preview_driver if File.exist?(tech_preview_driver)
+
+          caps = Selenium::WebDriver::Remote::Capabilities.safari
+          WebDriver::Driver.for :safari, desired_capabilities: caps, driver_path: driver_path
         end
 
         def keep_alive_client

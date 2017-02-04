@@ -30,6 +30,7 @@ setup_args = {
     'cmdclass': {'install': install},
     'name': 'selenium',
     'version': "3.0.2",
+    'license': 'Apache 2.0',
     'description': 'Python bindings for Selenium',
     'long_description': open(join(abspath(dirname(__file__)), "py", "README.rst")).read(),
     'url': 'https://github.com/SeleniumHQ/selenium/',
@@ -46,7 +47,8 @@ setup_args = {
                     'Programming Language :: Python :: 2.7',
                     'Programming Language :: Python :: 3.3',
                     'Programming Language :: Python :: 3.4',
-                    'Programming Language :: Python :: 3.5'],
+                    'Programming Language :: Python :: 3.5',
+                    'Programming Language :: Python :: 3.6'],
     'package_dir': {
         'selenium': 'py/selenium',
         'selenium.common': 'py/selenium/common',
